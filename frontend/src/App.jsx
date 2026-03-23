@@ -1,10 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UploadCloud, CheckCircle2, AlertCircle, Calendar, Zap, Activity, BrainCircuit } from 'lucide-react';
+import { UploadCloud, CheckCircle2, AlertCircle, Calendar, Zap, Activity, BrainCircuit, ArrowRight } from 'lucide-react';
 
 const API = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
-// ── Ultra-Premium Vercel Monochrome Components ────────────────────────────────
+// ── Shared UI Architecture ───────────────────────────────────────
 
 const ShootingStars = () => {
   const [stars, setStars] = useState([]);
@@ -13,17 +13,14 @@ const ShootingStars = () => {
     const interval = setInterval(() => {
       const top = Math.random() * 100;
       const left = Math.random() * 100;
-
       const newStar = {
         id: Math.random(),
         top,
         left,
         duration: 1 + Math.random() * 1.5,
       };
-
       setStars((prev) => [...prev.slice(-4), newStar]);
     }, 800);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -39,10 +36,8 @@ const ShootingStars = () => {
             animation: `shoot ${star.duration}s linear forwards`,
           }}
         >
-          {/* head */}
-          <div className="w-[2px] h-[2px] bg-white rounded-full shadow-[0_0_10px_white]" />
-          {/* trail */}
-          <div className="w-[2px] h-[80px] bg-gradient-to-b from-white/80 to-transparent opacity-50 blur-[1px]" />
+          <div className="w-[1.5px] h-[1.5px] bg-white rounded-full shadow-[0_0_8px_white]" />
+          <div className="w-[1.5px] h-[70px] bg-gradient-to-b from-white/60 to-transparent opacity-40 blur-[0.5px]" />
         </span>
       ))}
     </div>
@@ -51,182 +46,103 @@ const ShootingStars = () => {
 
 const StaticStars = () => {
   const [stars] = useState(() => 
-    Array.from({ length: 40 }).map(() => ({
+    Array.from({ length: 50 }).map(() => ({
       top: `${Math.random() * 100}%`,
       left: `${Math.random() * 100}%`,
+      opacity: 0.1 + Math.random() * 0.4
     }))
   );
 
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {stars.map((pos, i) => (
+      {stars.map((s, i) => (
         <div
           key={i}
-          className="absolute w-[1px] h-[1px] bg-white/40"
-          style={pos}
+          className="absolute w-[1px] h-[1px] bg-white/60"
+          style={{ top: s.top, left: s.left, opacity: s.opacity }}
         />
       ))}
     </div>
   );
 };
 
-const BackgroundGlow = () => {
-  return (
-    <div className="fixed inset-0 -z-10 bg-[#000000] overflow-hidden pointer-events-none">
-      {/* 40 static background stars */}
-      <StaticStars />
-      
-      {/* Ambient white glow (monochrome, no color) */}
-      <div className="absolute w-[700px] h-[700px] bg-white/5 blur-[140px] top-[-200px] left-[-200px]" />
-      <div className="absolute w-[600px] h-[600px] bg-white/5 blur-[140px] bottom-[-200px] right-[-200px]" />
-      
-      {/* Dynamic shooting stars layer */}
-      <ShootingStars />
-    </div>
-  );
-};
+const Background = () => (
+  <div className="fixed inset-0 -z-10 bg-[#000000] overflow-hidden pointer-events-none">
+    <StaticStars />
+    <div className="absolute w-[800px] h-[800px] bg-white/[0.03] blur-[150px] -top-[300px] -left-[300px]" />
+    <div className="absolute w-[800px] h-[800px] bg-white/[0.03] blur-[150px] -bottom-[300px] -right-[300px]" />
+    <ShootingStars />
+  </div>
+);
 
-const GlassCard = ({ children, className = '', hover = true, onClick }) => {
-  return (
-    // Note: outer glass-panel styles are precisely defined in index.css
-    <motion.div
-      onClick={onClick}
-      whileHover={hover ? { scale: 1.01, borderColor: "rgba(255,255,255,0.15)" } : {}}
-      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-      className={`glass-panel p-6 md:p-8 transition duration-300 ${className} ${onClick ? 'cursor-pointer' : ''}`}
-    >
-      {/* Surface Gradient (secret sauce lit cards) */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.08),transparent_60%)] pointer-events-none" />
-      
-      {/* Top Reflection (luxury glass texture) */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-0 left-0 w-full h-[40%] bg-gradient-to-b from-white/10 to-transparent opacity-20" />
-      </div>
-
-      <div className="relative z-10 w-full h-full">{children}</div>
-    </motion.div>
-  );
-};
+const GlassCard = ({ children, className = '', hover = true, onClick }) => (
+  <motion.div
+    onClick={onClick}
+    whileHover={hover ? { transform: 'translateY(-2px)', borderColor: 'rgba(255,255,255,0.15)' } : {}}
+    className={`glass-panel p-6 md:p-8 ${className} ${onClick ? 'cursor-pointer' : ''}`}
+  >
+    <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.05),transparent_70%)] pointer-events-none" />
+    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+    <div className="relative z-10">{children}</div>
+  </motion.div>
+);
 
 const PremiumButton = ({ children, onClick, disabled, loading, variant = 'primary', className = '' }) => {
   const isPrimary = variant === 'primary';
-  // Precise user-provided primary button logic
   const btnClass = isPrimary 
-    ? 'bg-white text-black font-medium rounded-xl px-6 py-3 transition shadow-[0_4px_20px_rgba(255,255,255,0.15)] hover:shadow-[0_6px_30px_rgba(255,255,255,0.25)] hover:bg-white/90' 
-    : 'border border-white/[0.08] text-white hover:bg-white/[0.04] transition rounded-xl px-6 py-3';
+    ? 'bg-white text-black font-semibold shadow-[0_4px_15px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_25px_rgba(255,255,255,0.2)] hover:bg-zinc-100' 
+    : 'border border-white/10 text-white hover:bg-white/[0.03]';
 
   return (
     <motion.button
       whileTap={!disabled ? { scale: 0.98 } : {}}
       onClick={onClick}
       disabled={disabled || loading}
-      className={`relative flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed ${btnClass} ${className}`}
+      className={`flex items-center justify-center rounded-xl px-6 py-3.5 text-sm transition-all duration-300 disabled:opacity-30 ${btnClass} ${className}`}
     >
-      <div className="flex items-center gap-3">
         {loading ? (
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-            className={`w-5 h-5 border-2 ${isPrimary ? 'border-black/30 border-t-black' : 'border-white/30 border-t-white'} rounded-full`}
-          />
+          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className={`w-5 h-5 border-2 rounded-full ${isPrimary ? 'border-black/20 border-t-black' : 'border-white/20 border-t-white'}`} />
         ) : children}
-      </div>
     </motion.button>
   );
 };
 
-const ProgressBar = ({ value }) => (
-  <div className="w-full h-2 bg-white/[0.08] rounded-full overflow-hidden relative">
-    <motion.div
-      initial={{ width: 0 }}
-      animate={{ width: `${value}%` }}
-      transition={{ duration: 1, ease: "easeOut" }}
-      className="h-full rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,0.3)] relative z-10"
-    />
-  </div>
-);
-
-const CircularProgress = ({ pct }) => (
-  <div className="relative w-40 h-40 flex items-center justify-center">
-    <svg className="w-full h-full transform -rotate-90">
-      <circle cx="80" cy="80" r="70" stroke="rgba(255,255,255,0.08)" strokeWidth="4" fill="none" />
-      <motion.circle
-        cx="80" cy="80" r="70"
-        stroke="white"
-        strokeWidth="4"
-        strokeLinecap="round"
-        fill="none"
-        initial={{ strokeDasharray: `${2 * Math.PI * 70}`, strokeDashoffset: `${2 * Math.PI * 70}` }}
-        animate={{ strokeDashoffset: `${2 * Math.PI * 70 * (1 - pct / 100)}` }}
-        transition={{ duration: 1.5, ease: "easeInOut" }}
-      />
-    </svg>
-    <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-      <motion.span 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="text-4xl font-bold text-white tracking-tight"
-      >
-        {pct}%
-      </motion.span>
+const ProgressBar = ({ value, label }) => (
+  <div className="w-full">
+    {label && <div className="flex justify-between text-[11px] font-bold uppercase tracking-[0.1em] text-zinc-500 mb-2"><span>{label}</span><span>{Math.round(value)}%</span></div>}
+    <div className="w-full h-[6px] bg-white/[0.05] rounded-full overflow-hidden">
+      <motion.div initial={{ width: 0 }} animate={{ width: `${value}%` }} transition={{ duration: 1 }} className="h-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.3)]" />
     </div>
   </div>
 );
 
-// ── Application Sections ────────────────────────────────────────
+// ── Application Header ──────────────────────────────────────────
 
-const Header = ({ tab, setTab, hasPlan, onReset }) => {
-  return (
-    <motion.header 
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      className="sticky top-0 z-50 pt-8 pb-4 px-6 md:px-12 bg-[#050505]/80 backdrop-blur-3xl border-b border-white/[0.08]"
-    >
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#0a0a0a] rounded-xl flex items-center justify-center border border-white/[0.08]">
-              <BrainCircuit className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-white">FLOW.AI</h1>
-            </div>
-          </div>
-          {hasPlan && (
-            <button 
-              onClick={onReset}
-              className="text-xs text-[#a1a1aa] hover:text-white transition-colors uppercase tracking-widest font-medium"
-            >
-              Reset Matrix
-            </button>
-          )}
+const Header = ({ tab, setTab, hasPlan, onReset }) => (
+  <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="sticky top-0 z-50 border-b border-white/[0.06] bg-black/80 backdrop-blur-2xl">
+    <div className="max-w-6xl mx-auto flex items-center justify-between h-20 px-6">
+      <div className="flex items-center gap-10">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-white rounded-lg flex items-center justify-center"><BrainCircuit className="w-5 h-5 text-black" strokeWidth={2.5}/></div>
+          <span className="font-bold tracking-[-0.03em] text-lg">FLOW.AI</span>
         </div>
-
         {hasPlan && (
-          <div className="flex bg-[#0a0a0a] p-1 rounded-xl border border-white/[0.04]">
+          <nav className="hidden md:flex bg-white/[0.03] p-1 rounded-xl border border-white/[0.04]">
             {['Plan', 'Progress', 'Quiz'].map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`relative px-5 py-2 text-sm transition-colors ${tab === t ? 'text-black font-semibold' : 'text-[#a1a1aa] font-medium hover:text-white'}`}
-              >
-                {tab === t && (
-                  <motion.div
-                    layoutId="activeTab"
-                    className="absolute inset-0 bg-white rounded-lg shadow-[0_2px_10px_rgba(255,255,255,0.1)]"
-                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  />
-                )}
+              <button key={t} onClick={() => setTab(t)} className={`relative px-5 py-2 text-xs font-bold uppercase tracking-widest transition-all ${tab === t ? 'text-black' : 'text-zinc-500 hover:text-zinc-300'}`}>
+                {tab === t && <motion.div layoutId="tab" className="absolute inset-0 bg-white rounded-lg shadow-lg" transition={{ type: "spring", stiffness: 400, damping: 30 }} />}
                 <span className="relative z-10">{t}</span>
               </button>
             ))}
-          </div>
+          </nav>
         )}
       </div>
-    </motion.header>
-  );
-};
+      {hasPlan && <button onClick={onReset} className="text-[10px] font-bold text-zinc-500 hover:text-white uppercase tracking-[0.2em] transition-colors">Reset Session</button>}
+    </div>
+  </motion.header>
+);
+
+// ── Application Pages ──────────────────────────────────────────
 
 const SetupForm = ({ onGenerate, loading }) => {
   const [syllabus, setSyllabus] = useState("");
@@ -245,393 +161,227 @@ const SetupForm = ({ onGenerate, loading }) => {
 
   const minStr = new Date(Date.now() + 86400000).toISOString().split("T")[0];
 
-  const handleSubmit = async () => {
-    setError("");
-    if (!syllabus.trim()) { setError("Provide your study topics to construct the matrix."); return; }
-    if (!examDate) { setError("Target timeline synchronization failed. Select a date."); return; }
-    try { await onGenerate(syllabus, examDate, hours); } 
-    catch (e) { setError(e.message || "Failed to sync with Neural Engine."); }
-  };
-
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto mt-16 px-6 pb-24"
-    >
-      <div className="text-center mb-10">
-        <h2 className="text-3xl font-bold tracking-tight text-white mb-3">Initialize Protocol</h2>
-        <p className="text-[#a1a1aa] text-lg max-w-lg mx-auto font-medium">Upload raw data vectors. The engine will synthesize a hyper-optimized trajectory calibrated for your execution.</p>
-      </div>
+    <div className="max-w-xl mx-auto pt-20 pb-32 px-6">
+      <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
+        <h2 className="text-4xl font-bold tracking-tighter mb-4 italic">The Future of Study.</h2>
+        <p className="text-zinc-500 font-medium">Inject your curriculum vectors. Synthetic planning calibrated for pure execution.</p>
+      </motion.div>
 
-      <GlassCard className="relative overflow-visible">
+      <GlassCard className="relative">
         <AnimatePresence>
           {error && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-              className="mb-8"
-            >
-              <div className="bg-red-500/10 border border-red-500/20 text-white rounded-xl p-4 flex items-center gap-3 text-sm font-medium">
-                <AlertCircle className="w-5 h-5 text-red-500" />
-                <p>{error}</p>
-              </div>
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="mb-6">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-xs font-bold flex items-center gap-3"><AlertCircle className="w-4 h-4"/>{error}</div>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div 
-          onClick={() => fileRef.current.click()}
-          className="border border-dashed border-white/10 hover:border-white/30 rounded-2xl p-8 text-center cursor-pointer transition-colors bg-[#050505] mb-8 group relative"
-        >
-          <UploadCloud className="w-8 h-8 mx-auto text-[#a1a1aa] group-hover:text-white transition-colors mb-4" />
-          <h3 className="text-sm font-semibold text-white mb-2">Drop Syllabus Core (.txt)</h3>
-          <p className="text-xs text-[#a1a1aa] font-medium">Click to browse system directories</p>
+        <div onClick={() => fileRef.current.click()} className="group border border-dashed border-white/10 hover:border-white/30 rounded-2xl p-10 text-center cursor-pointer transition-all bg-white/[0.01] mb-8">
+          <UploadCloud className="w-8 h-8 mx-auto text-zinc-600 group-hover:text-white mb-4 transition-colors" />
+          <div className="text-sm font-bold text-white mb-1">Upload Vectors</div>
+          <div className="text-[11px] text-zinc-600 font-bold uppercase tracking-widest">Plaintext Analysis System</div>
           <input ref={fileRef} type="file" accept=".txt" className="hidden" onChange={handleFile} />
         </div>
 
-        <div className="space-y-6 mb-8 relative z-20">
+        <div className="space-y-6 mb-8">
           <div>
-            <label className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-widest mb-2">Raw Topic Vectors</label>
-            <textarea 
-              placeholder="e.g. System Architecture, Memory Concepts, Execution Pipelines..." 
-              value={syllabus} onChange={(e) => setSyllabus(e.target.value)} 
-              className="neumorphic-input w-full h-32 px-4 py-3 text-sm"
-            />
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Subject Context</label>
+            <textarea placeholder="Paste syllabus content or learning objectives..." value={syllabus} onChange={(e)=>setSyllabus(e.target.value)} className="neumorphic-input w-full h-28 p-4 text-sm leading-relaxed" />
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-widest mb-2 flex items-center gap-2"><Calendar className="w-3.5 h-3.5"/> Deadlines</label>
-              <input 
-                type="date" min={minStr} 
-                value={examDate} onChange={(e) => setExamDate(e.target.value)} 
-                className="neumorphic-input w-full px-4 py-3 text-sm flex-1 [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert"
-              />
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block mb-2">Terminal Date</label>
+              <input type="date" min={minStr} value={examDate} onChange={(e)=>setExamDate(e.target.value)} className="neumorphic-input w-full p-4 text-xs [&::-webkit-calendar-picker-indicator]:filter [&::-webkit-calendar-picker-indicator]:invert" />
             </div>
             <div>
-              <label className="flex justify-between items-end text-xs font-semibold text-[#a1a1aa] uppercase tracking-widest mb-2">
-                <span className="flex items-center gap-2"><Zap className="w-3.5 h-3.5"/> Bandwidth</span>
-                <span className="text-white text-sm">{hours}h / cycle</span>
-              </label>
-              <input 
-                type="range" min={1} max={10} 
-                value={hours} onChange={(e) => setHours(Number(e.target.value))} 
-                className="w-full h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer accent-white"
-              />
+              <label className="flex justify-between text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2"><span>Daily Load</span><span className="text-white">{hours}H</span></label>
+              <input type="range" min={1} max={12} value={hours} onChange={(e)=>setHours(Number(e.target.value))} className="w-full h-1 bg-white/10 rounded-full appearance-none accent-white cursor-pointer" />
             </div>
           </div>
         </div>
 
-        <PremiumButton onClick={handleSubmit} loading={loading} className="w-full text-sm">
-          Launch Simulation
-        </PremiumButton>
+        <PremiumButton onClick={async () => {
+          setError("");
+          if(!syllabus.trim() || !examDate) return setError("Data fields incomplete.");
+          try { await onGenerate(syllabus, examDate, hours); } catch(e) { setError(e.message); }
+        }} loading={loading} className="w-full">Initialize Matrix</PremiumButton>
       </GlassCard>
-    </motion.div>
+    </div>
   );
 };
 
 const PlanTab = ({ plan, onToggle }) => {
-  const all = plan.flatMap((d) => d.topics);
-  const done = all.filter((t) => t.done).length;
-  const pct = all.length ? Math.round((done / all.length) * 100) : 0;
+  const all = plan.flatMap(d => d.topics);
+  const done = all.filter(t => t.done).length;
+  const pct = all.length ? Math.round((done/all.length)*100) : 0;
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-3xl mx-auto mt-12 px-6 pb-24 space-y-8">
-      <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-6 mb-4">
-        <div className="flex-1 w-full">
-          <h2 className="text-xl font-bold text-white mb-2">System Synchronization</h2>
-          <ProgressBar value={pct} />
-        </div>
-        <div className="text-right">
-          <div className="text-4xl font-bold tracking-tight text-white">{pct}%</div>
-        </div>
-      </div>
-
-      <div className="space-y-4">
-        {plan.map((day, idx) => {
-          const dayDone = day.topics.filter((t) => t.done).length;
-          const dayPct = Math.round((dayDone / day.topics.length) * 100);
-          
-          return (
-            <motion.div 
-              initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: idx * 0.05 }}
-              key={day.day}
-            >
-              <GlassCard className="p-0 overflow-hidden" hover={false}>
-                <div className="px-6 py-5 border-b border-white/[0.04] bg-[#111111] relative z-20">
-                  <div className="flex items-center gap-4">
-                    <div className="px-3 py-1.5 rounded-md bg-white text-black text-xs font-bold uppercase tracking-widest border border-white">Day {day.day}</div>
-                    <p className="text-[#a1a1aa] text-sm font-semibold tracking-wide">{day.date}</p>
-                  </div>
-                  <div className="w-24">
-                    <ProgressBar value={dayPct} />
-                  </div>
-                </div>
-
-                <div className="p-2 relative z-20">
-                  {day.topics.map((topic) => (
-                    <motion.div 
-                      whileHover={{ backgroundColor: "rgba(255,255,255,0.02)" }}
-                      key={topic.id} 
-                      onClick={() => onToggle(day.day, topic.id)}
-                      className="flex items-start md:items-center gap-4 py-3 px-4 rounded-xl cursor-pointer transition-colors hover:border-white/10 border border-transparent"
-                    >
-                      <div className={`mt-0.5 md:mt-0 w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition-all ${topic.done ? 'bg-white border-white text-black shadow-[0_0_10px_rgba(255,255,255,0.4)]' : 'border-[#a1a1aa] bg-transparent'}`}>
-                        {topic.done && <CheckCircle2 className="w-4 h-4" strokeWidth={3} />}
-                      </div>
-                      <span className={`flex-1 text-sm md:text-base font-medium transition-colors ${topic.done ? 'text-zinc-600 line-through' : 'text-zinc-200'}`}>
-                        {topic.name}
-                      </span>
-                    </motion.div>
-                  ))}
-                </div>
-              </GlassCard>
-            </motion.div>
-          );
-        })}
-      </div>
-    </motion.div>
-  );
-};
-
-const ProgressTab = ({ plan }) => {
-  const all = plan.flatMap((d) => d.topics.map((t) => ({ ...t, day: d.day })));
-  const done = all.filter((t) => t.done);
-  const pending = all.filter((t) => !t.done);
-  const pct = all.length ? Math.round((done.length / all.length) * 100) : 0;
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-4xl mx-auto mt-12 px-6 pb-24">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        {[
-          { label: "Total Assignments", value: all.length, icon: <Activity className="w-5 h-5 text-[#a1a1aa]" /> },
-          { label: "Executed", value: done.length, icon: <CheckCircle2 className="w-5 h-5 text-white" /> },
-          { label: "Pending", value: pending.length, icon: <Zap className="w-5 h-5 text-[#a1a1aa]" /> },
-        ].map((s, i) => (
-          <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: i * 0.05 }} key={s.label}>
-            <GlassCard className="flex flex-col gap-3 p-6" hover={false}>
-              <div className="flex items-center justify-between relative z-10">
-                <div className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-widest">{s.label}</div>
-                {s.icon}
+    <div className="max-w-2xl mx-auto pt-12 pb-32 px-6">
+      <div className="mb-12"><ProgressBar label="Neural Synchronization" value={pct} /></div>
+      <div className="space-y-6">
+        {plan.map((day, ix) => (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: ix * 0.1 }} key={day.day}>
+            <GlassCard className="p-0 overflow-hidden" hover={false}>
+              <div className={`px-6 py-4 bg-white/[0.02] border-b border-white/[0.05] flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] italic`}>
+                <span>Phase {day.day} // {day.date}</span>
+                <span className={`${day.topics.every(t=>t.done) ? 'text-white' : ''}`}>{day.topics.filter(t=>t.done).length}/{day.topics.length} Nodes</span>
               </div>
-              <div className="text-4xl font-bold text-white tracking-tight relative z-10">{s.value}</div>
+              <div className="p-4 space-y-1">
+                {day.topics.map((t) => (
+                  <div key={t.id} onClick={() => onToggle(day.day, t.id)} className="flex items-center gap-4 p-4 rounded-xl hover:bg-white/[0.02] transition-colors cursor-pointer group">
+                    <div className={`w-6 h-6 rounded-md flex items-center justify-center border transition-all ${t.done ? 'bg-white border-white' : 'border-zinc-700 bg-transparent group-hover:border-zinc-500'}`}>
+                      {t.done && <CheckCircle2 className="w-4 h-4 text-black" strokeWidth={3}/>}
+                    </div>
+                    <span className={`text-sm font-medium transition-all ${t.done ? 'text-zinc-600 line-through' : 'text-zinc-200'}`}>{t.name}</span>
+                  </div>
+                ))}
+              </div>
             </GlassCard>
           </motion.div>
         ))}
       </div>
+    </div>
+  );
+};
 
-      <GlassCard className="flex flex-col md:flex-row items-center gap-12 p-10 md:p-14">
-        <div className="shrink-0 relative z-20"><CircularProgress pct={pct} /></div>
-        <div className="flex-1 relative z-20">
-          <h2 className="text-xl font-bold text-white mb-2">Integrity Status</h2>
-          <p className="text-sm text-[#a1a1aa] font-medium leading-relaxed mb-6">
-            Neural assimilation is functioning at {pct}% capacity. Maintain execution velocity to achieve complete trajectory mapping.
-          </p>
-          <div className="flex flex-wrap gap-2 text-white">
-            {done.slice(0, 5).map(t => (
-              <span key={t.id} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#111111] border border-white/[0.08]">
-                {t.name}
-              </span>
+const ProgressTab = ({ plan }) => {
+  const all = plan.flatMap(d => d.topics);
+  const done = all.filter(t => t.done).length;
+  const pct = all.length ? Math.round((done/all.length)*100) : 0;
+
+  return (
+    <div className="max-w-4xl mx-auto pt-12 pb-32 px-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        {[
+          { l: 'Structure', v: all.length, i: <BrainCircuit className="w-4 h-4"/> },
+          { l: 'Assimilated', v: done, i: <CheckCircle2 className="w-4 h-4"/> },
+          { l: 'Remaining', v: all.length - done, i: <Zap className="w-4 h-4"/> }
+        ].map((s, idx) => (
+          <GlassCard key={idx} className="flex flex-col gap-4">
+            <div className="flex justify-between items-center text-[10px] font-bold text-zinc-500 uppercase tracking-widest"><span>{s.l}</span>{s.i}</div>
+            <div className="text-4xl font-bold tracking-tighter italic">{s.v}</div>
+          </GlassCard>
+        ))}
+      </div>
+
+      <GlassCard className="flex flex-col md:flex-row items-center gap-12 p-12">
+        <div className="relative w-48 h-48 flex items-center justify-center">
+          <svg className="w-full h-full transform -rotate-90">
+            <circle cx="96" cy="96" r="80" stroke="rgba(255,255,255,0.05)" strokeWidth="4" fill="none" />
+            <motion.circle cx="96" cy="96" r="80" stroke="white" strokeWidth="6" strokeLinecap="round" fill="none"
+              initial={{ strokeDasharray: 502, strokeDashoffset: 502 }}
+              animate={{ strokeDashoffset: 502 * (1 - pct/100) }}
+              transition={{ duration: 1.5 }}
+            />
+          </svg>
+          <div className="absolute text-4xl font-bold tracking-tighter italic">{pct}%</div>
+        </div>
+        <div className="flex-1">
+          <h3 className="text-2xl font-bold tracking-tight mb-3 italic">Synthetic Integrity: {pct === 100 ? 'Absolute' : 'Synchronizing'}</h3>
+          <p className="text-zinc-500 text-sm leading-relaxed mb-6">Execution is proceeding through the established curriculum vectors. Current integrity is validated at {pct}% assimilated data.</p>
+          <div className="flex flex-wrap gap-2">
+            {all.filter(t=>t.done).slice(-3).map(t => (
+              <span key={t.id} className="text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 bg-white text-black border border-white">Assimilated: {t.name}</span>
             ))}
-            {done.length > 5 && <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-black bg-white">+{done.length - 5} verified</span>}
           </div>
         </div>
       </GlassCard>
-    </motion.div>
+    </div>
   );
 };
 
 const QuizTab = ({ plan }) => {
-  const doneTopic = plan.flatMap((d) => d.topics).filter((t) => t.done).map((t) => t.name);
+  const doneTopic = plan.flatMap(d => d.topics).filter(t => t.done).map(t => t.name);
   const [quiz, setQuiz] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [qIdx, setQIdx] = useState(0);
+  const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
-  const [finished, setFinished] = useState(false);
+  const [done, setDone] = useState(false);
 
-  const loadQuiz = async () => {
-    if (doneTopic.length === 0) return;
+  const startQuiz = async () => {
     setLoading(true); setError("");
-    try {
-      const res = await fetch(`${API}/quiz/generate`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topics: doneTopic }),
-      });
-      if (!res.ok) throw new Error("Connection Refused");
-      const data = await res.json();
-      setQuiz(data.quiz); setQIdx(0); setSelected(null); setScore(0); setFinished(false);
-    } catch (e) { setError("Diagnostics failure. Engine offline."); } 
-    finally { setLoading(false); }
+      try {
+        const r = await fetch(`${API}/quiz/generate`, {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ topics: doneTopic })
+        });
+      if(!r.ok) throw new Error("Synchronization Refused.");
+      const d = await r.json();
+      setQuiz(d.quiz); setIdx(0); setSelected(null); setScore(0); setDone(false);
+    } catch(e) { setError(e.message); } finally { setLoading(false); }
   };
 
-  if (doneTopic.length === 0) {
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-xl mx-auto mt-16 px-6 pb-24 text-center">
-        <GlassCard className="py-16">
-          <div className="relative z-20 w-16 h-16 mx-auto bg-white/[0.05] border border-white/[0.08] rounded-full flex items-center justify-center mb-6">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </div>
-          <h2 className="relative z-20 text-lg font-bold text-white mb-2">Insufficient Data</h2>
-          <p className="relative z-20 text-sm text-[#a1a1aa] font-medium">Verify execution in the Plan module before initiating diagnostics.</p>
-        </GlassCard>
-      </motion.div>
-    );
-  }
+  if(!doneTopic.length) return (
+    <div className="max-w-xl mx-auto pt-20 px-6"><GlassCard className="text-center py-20"><BrainCircuit className="w-10 h-10 mx-auto text-zinc-700 mb-6"/><div className="text-sm font-bold text-zinc-500 uppercase tracking-widest mb-2">Insufficient Data Roots</div><p className="text-xs text-zinc-600">Assimilate topics in the Plan module to begin diagnostics.</p></GlassCard></div>
+  );
 
-  if (!quiz && !loading) {
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-xl mx-auto mt-16 px-6 pb-24 text-center">
-        <GlassCard className="py-16">
-          <BrainCircuit className="relative z-20 w-12 h-12 text-[#a1a1aa] mx-auto mb-6" />
-          <h2 className="relative z-20 text-xl font-bold text-white mb-3">Initiate Diagnostics</h2>
-          <p className="relative z-20 text-sm text-[#a1a1aa] font-medium mb-8">Deploying evaluation routine based on {doneTopic.length} verified nodes.</p>
-          
-          <AnimatePresence>
-            {error && (
-              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mb-6 overflow-hidden">
-                <div className="relative z-20 text-red-400 border border-red-500/20 bg-red-500/10 p-4 rounded-xl text-sm font-semibold">{error}</div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+  if(!quiz && !loading) return (
+    <div className="max-w-xl mx-auto pt-20 px-6"><GlassCard className="text-center py-20"><Zap className="w-10 h-10 mx-auto text-white mb-6"/><h2 className="text-2xl font-bold tracking-tight italic mb-8">Execute Diagnostic Routine</h2>{error && <div className="text-red-400 mb-6 text-xs font-bold">{error}</div>}<PremiumButton onClick={startQuiz} variant="secondary" className="mx-auto block">Launch Validation</PremiumButton></GlassCard></div>
+  );
 
-          <PremiumButton onClick={loadQuiz} variant="secondary" className="w-full sm:w-auto mx-auto px-10 relative z-20">Start Assessment</PremiumButton>
-        </GlassCard>
-      </motion.div>
-    );
-  }
+  if(loading) return <div className="py-40 text-center"><motion.div animate={{rotate:360}} transition={{repeat:Infinity, duration:1}} className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full mx-auto mb-6"/><div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest animate-pulse">Synthesizing Diagnostics...</div></div>;
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 relative z-20">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full mb-6" />
-        <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-widest animate-pulse">Compiling Verification...</h2>
-      </div>
-    );
-  }
+  if(done) return (
+    <div className="max-w-xl mx-auto pt-20 px-6"><GlassCard className="text-center py-20"><div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-4">Diagnostic Results</div><div className="text-8xl font-bold tracking-tighter italic mb-4">{score}<span className="text-4xl text-zinc-800">/{quiz.length}</span></div><p className="text-zinc-500 text-sm mb-10 italic">Integrity Validation: {Math.round(score/quiz.length*100)}% Assimilation Accuracy</p><PremiumButton onClick={startQuiz} className="mx-auto block">Re-Validate Integrity</PremiumButton></GlassCard></div>
+  );
 
-  if (finished) {
-    const pct = Math.round((score / quiz.length) * 100);
-    const isSuccess = pct >= 80;
-    
-    return (
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-xl mx-auto mt-16 px-6 pb-24 text-center">
-        <GlassCard className="py-16 relative">
-          <h3 className="text-xs font-semibold text-[#a1a1aa] tracking-widest uppercase mb-4 relative z-20">Diagnostics Complete</h3>
-          <div className="text-7xl font-bold text-white tracking-tight mb-4 relative z-20">{score}<span className="text-3xl text-zinc-700">/{quiz.length}</span></div>
-          <div className="text-lg font-medium text-[#a1a1aa] mb-10 relative z-20">
-            {pct}% Efficiency — {isSuccess ? "Parameters Met" : "Recalibration Required"}
-          </div>
-          <PremiumButton onClick={loadQuiz} className="mx-auto block relative z-20" variant={isSuccess ? "primary" : "secondary"}>
-            Run New Simulation
-          </PremiumButton>
-        </GlassCard>
-      </motion.div>
-    );
-  }
-
-  const q = quiz[qIdx];
-  const handleAnswer = (i) => {
-    if (selected !== null) return;
-    setSelected(i);
-    setScore((s) => s + (i === q.answer ? 1 : 0));
-  };
-  const next = () => {
-    if (qIdx + 1 >= quiz.length) setFinished(true);
-    else { setQIdx((i) => i + 1); setSelected(null); }
-  };
-
+  const q = quiz[idx];
   return (
-    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-2xl mx-auto mt-12 px-6 pb-24 relative z-20">
-      <div className="flex justify-between items-center mb-6">
-        <div className="text-xs text-[#a1a1aa] font-semibold uppercase tracking-widest">
-          Node {qIdx + 1} of {quiz.length}
-        </div>
-        <div className="text-sm font-semibold text-white">Score: {score}</div>
-      </div>
-
-      <ProgressBar value={(qIdx / quiz.length) * 100} />
-
-      <h2 className="text-xl font-semibold text-white leading-relaxed mt-10 mb-8 shadow-sm">{q.q}</h2>
-
+    <div className="max-w-2xl mx-auto pt-16 pb-32 px-6">
+      <div className="flex justify-between items-end mb-6 text-[10px] font-bold uppercase tracking-widest text-zinc-500"><span>Sequence {idx+1}/{quiz.length}</span><span>Score: {score}</span></div>
+      <ProgressBar value={(idx/quiz.length)*100} />
+      <h2 className="text-2xl font-bold tracking-tight italic mt-12 mb-10 leading-snug">{q.q}</h2>
       <div className="space-y-3">
         {q.options.map((opt, i) => {
-          const isSelected = selected === i;
-          const isCorrect = i === q.answer;
-          let statusClass = "border-white/[0.04] bg-[#0a0a0a] hover:bg-white/[0.02]";
-          if (selected !== null) {
-            if (isCorrect) statusClass = "border-white bg-white text-black font-semibold shadow-[0_0_15px_rgba(255,255,255,0.2)]";
-            else if (isSelected) statusClass = "border-white/[0.08] bg-[#111111] text-zinc-500 line-through";
-            else statusClass = "border-white/[0.04] bg-transparent opacity-40";
+          const isSel = selected === i;
+          const isCorr = i === q.answer;
+          let cls = "bg-white/[0.02] border-white/[0.08] hover:border-white/20";
+          if(selected !== null) {
+            if(isCorr) cls = "bg-white text-black border-white font-bold";
+            else if(isSel) cls = "bg-red-500/10 border-red-500/50 text-red-100 opacity-60";
+            else cls = "opacity-20 border-white/5";
           }
-
-          return (
-            <motion.button
-              key={i}
-              onClick={() => handleAnswer(i)}
-              className={`w-full text-left p-4 rounded-xl border transition-all duration-200 flex gap-4 items-center ${statusClass}`}
-            >
-              <div className={`w-6 h-6 shrink-0 rounded-md flex items-center justify-center text-xs font-semibold ${selected !== null && isCorrect ? 'bg-black text-white' : selected !== null && isSelected ? 'bg-[#222222] text-[#a1a1aa]' : 'bg-white/10 text-[#a1a1aa]'}`}>
-                {String.fromCharCode(65 + i)}
-              </div>
-              <span className="text-sm md:text-base font-medium">{opt}</span>
-            </motion.button>
-          );
+          return <button key={i} onClick={() => selected === null && (setSelected(i), setScore(s => s + (i === q.answer ? 1 : 0)))} className={`w-full text-left p-5 rounded-2xl border transition-all ${cls}`}><span className="text-[14px] font-medium leading-relaxed">{opt}</span></button>;
         })}
       </div>
-
-      <AnimatePresence>
-        {selected !== null && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 flex justify-end">
-            <PremiumButton onClick={next} className="text-sm">
-              {qIdx + 1 >= quiz.length ? "Finalize" : "Proceed"}
-            </PremiumButton>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
+      <AnimatePresence>{selected !== null && (<motion.div initial={{opacity:0, y:10}} animate={{opacity:1,y:0}} className="mt-8 flex justify-end"><PremiumButton onClick={() => idx+1 >= quiz.length ? setDone(true) : (setIdx(i=>i+1), setSelected(null))} className="flex items-center gap-2"><span>Proceed</span><ArrowRight className="w-4 h-4"/></PremiumButton></motion.div>)}</AnimatePresence>
+    </div>
   );
 };
 
-// ── Root Application ─────────────────────────────────────────────
+// ── Root Entry ──────────────────────────────────────────────────
+
 export default function App() {
-  const [plan, setPlan] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [tab, setTab] = useState("Plan");
+  const [p, setP] = useState(null);
+  const [l, setL] = useState(false);
+  const [t, setT] = useState("Plan");
 
-  const handleGenerate = async (syllabus, examDate, hours) => {
-    setLoading(true);
+  const handleGen = async (syllabus, examDate, hoursPerDay) => {
+    setL(true);
     try {
-      const res = await fetch(`${API}/plan/generate`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ syllabus, examDate, hoursPerDay: hours }),
+      const r = await fetch(`${API}/plan/generate`, {
+        method: "POST", headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ syllabus, examDate, hoursPerDay })
       });
-      if (!res.ok) { setLoading(false); const err = await res.json(); throw new Error(err.error || "Neural Link Failed"); }
-      const data = await res.json();
-      setPlan(data.plan); setLoading(false); setTab("Plan");
-    } catch(err) {
-      setLoading(false);
-      throw err;
-    }
-  };
-
-  const handleToggle = (dayNum, topicId) => {
-    setPlan((prev) => prev.map((d) => d.day === dayNum ? { ...d, topics: d.topics.map((t) => t.id === topicId ? { ...t, done: !t.done } : t) } : d));
+      if(!r.ok) { setL(false); const e = await r.json(); throw new Error(e.error || "Neural Fault."); }
+      const d = await r.json(); setP(d.plan); setL(false); setT("Plan");
+    } catch(e) { setL(false); throw e; }
   };
 
   return (
     <>
-      <BackgroundGlow />
-      <Header tab={tab} setTab={setTab} hasPlan={!!plan} onReset={() => { setPlan(null); setTab("Plan"); }} />
+      <Background />
+      <Header tab={t} setTab={setT} hasPlan={!!p} onReset={()=>{setP(null);setT("Plan")}} />
       <AnimatePresence mode="wait">
-        <motion.main key={tab || "setup"} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}>
-          {!plan ? (
-            <SetupForm onGenerate={handleGenerate} loading={loading} />
-          ) : (
+        <motion.main key={t || 'setup'} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+          {!p ? <SetupForm onGenerate={handleGen} loading={l} /> : (
             <>
-              {tab === "Plan" && <PlanTab plan={plan} onToggle={handleToggle} />}
-              {tab === "Progress" && <ProgressTab plan={plan} />}
-              {tab === "Quiz" && <QuizTab plan={plan} />}
+              {t === "Plan" && <PlanTab plan={p} onToggle={(dn, tid) => setP(old => old.map(d => d.day === dn ? {...d, topics: d.topics.map(ti => ti.id === tid ? {...ti, done: !ti.done} : ti)} : d))} />}
+              {t === "Progress" && <ProgressTab plan={p} />}
+              {t === "Quiz" && <QuizTab plan={p} />}
             </>
           )}
         </motion.main>

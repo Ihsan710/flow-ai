@@ -51,7 +51,7 @@ RESPONSE FORMAT (strict JSON array):
 
     res.json({ quiz });
   } catch (err) {
-    console.error("Quiz generation error:", err);
+    console.error("Quiz generation error:", err.message || "An unexpected error occurred.");
     res.status(500).json({ error: "Failed to generate quiz. Please try again." });
   }
 });

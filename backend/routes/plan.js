@@ -64,7 +64,7 @@ RESPONSE FORMAT (strict JSON array):
 
     res.json({ plan });
   } catch (err) {
-    console.error("Plan generation error:", err);
+    console.error("Plan generation error:", err.message || "An unexpected error occurred.");
     res.status(500).json({ error: "Failed to generate plan. Please try again." });
   }
 });

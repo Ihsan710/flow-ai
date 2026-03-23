@@ -13,10 +13,9 @@ export default {
       },
       colors: {
         bg: "#000000",
-        surface: "#0a0a0a",
+        surface: "#09090b",
         card: "rgba(255,255,255,0.03)",
         border: "rgba(255,255,255,0.08)",
-        accent: "#00f5ff",
       }
     },
   },
